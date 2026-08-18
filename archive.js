@@ -5,101 +5,105 @@ const SUPABASE_KEY =
   "sb_publishable_3QNt1LfRmiSrVaBUyxqfhw_ksSgSi-8";
 
 
+const supabaseClient =
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
+
+
 async function loadArchive() {
 
   const archiveArea =
     document.getElementById("archive-area");
 
+  archiveArea.innerHTML =
+    "<p>Loading the archive...</p>";
+
+
   try {
 
-    const promptResponse = await fetch(
-      `${SUPABASE_URL}/rest/v1/prompts?select=id,emotion,question,status&order=created_at.desc`,
-      {
-        headers: {
-          "apikey": SUPABASE_KEY,
-          "Authorization": `Bearer ${SUPABASE_KEY}`
-        }
-      }
-    );
+    const {
+      data: prompts,
+      error: promptsError
+    } =
+      await supabaseClient
+        .from("prompts")
+        .select("id, emotion, question, status, created_at")
+        .in("status", ["active", "archived"])
+        .order("created_at", {
+          ascending: false
+        });
 
-    if (!promptResponse.ok) {
-      throw new Error("Could not load prompts");
+
+    if (promptsError) {
+      throw promptsError;
     }
 
-    const prompts =
-      await promptResponse.json();
-
-    const archivedPrompts =
-      prompts.filter(prompt =>
-        prompt.status === "archived" ||
-        prompt.status === "active"
-      );
-
-    if (archivedPrompts.length === 0) {
-
-      archiveArea.innerHTML = `
-        <p class="message">
-          The archive is still waiting for its first voices.
-        </p>
-      `;
-
-      return;
-    }
 
     archiveArea.innerHTML = "";
 
+    let voicesFound = false;
 
-    for (const prompt of archivedPrompts) {
 
-      const answersResponse = await fetch(
-        `${SUPABASE_URL}/rest/v1/answers?prompt_id=eq.${prompt.id}&status=eq.approved&select=id`,
-        {
-          headers: {
-            "apikey": SUPABASE_KEY,
-            "Authorization": `Bearer ${SUPABASE_KEY}`
-          }
-        }
-      );
+    for (const prompt of prompts) {
 
-      if (!answersResponse.ok) {
+      const {
+        data: answers,
+        error: answersError
+      } =
+        await supabaseClient
+          .from("answers")
+          .select("id")
+          .eq("prompt_id", prompt.id)
+          .eq("status", "approved");
+
+
+      if (answersError) {
+        console.error(answersError);
         continue;
       }
 
-      const answers =
-        await answersResponse.json();
+
+      if (!answers || answers.length === 0) {
+        continue;
+      }
+
 
       const answerIds =
         answers.map(answer => answer.id);
 
-      if (answerIds.length === 0) {
+
+      const {
+        data: voices,
+        error: voicesError
+      } =
+        await supabaseClient
+          .from("voice_responses")
+          .select("id, audio_path")
+          .in("answer_id", answerIds)
+          .eq("status", "approved")
+          .order("created_at", {
+            ascending: true
+          });
+
+
+      if (voicesError) {
+        console.error(voicesError);
         continue;
       }
 
-      const voiceResponse = await fetch(
-        `${SUPABASE_URL}/rest/v1/voice_responses?answer_id=in.(${answerIds.join(",")})&status=eq.approved&select=id,audio_path&order=created_at.asc`,
-        {
-          headers: {
-            "apikey": SUPABASE_KEY,
-            "Authorization": `Bearer ${SUPABASE_KEY}`
-          }
-        }
-      );
 
-      if (!voiceResponse.ok) {
+      if (!voices || voices.length === 0) {
         continue;
       }
 
-      const voices =
-        await voiceResponse.json();
 
-      if (voices.length === 0) {
-        continue;
-      }
-
-      const section =
+      const promptSection =
         document.createElement("section");
 
-      section.innerHTML = `
+
+      promptSection.innerHTML = `
         <div class="emotion">
           ${escapeHtml(prompt.emotion)}
         </div>
@@ -111,20 +115,46 @@ async function loadArchive() {
         <div class="archive-voices"></div>
       `;
 
+
       const voiceContainer =
-        section.querySelector(".archive-voices");
+        promptSection.querySelector(
+          ".archive-voices"
+        );
 
 
       for (const voice of voices) {
 
-        const signedUrl =
-          await createSignedAudioUrl(
-            voice.audio_path
+        const {
+          data: signedData,
+          error: signedError
+        } =
+          await supabaseClient
+            .storage
+            .from("voice-responses")
+            .createSignedUrl(
+              voice.audio_path,
+              3600
+            );
+
+
+        if (signedError) {
+
+          console.error(
+            "Signed URL error:",
+            signedError
           );
 
-        if (!signedUrl) {
           continue;
         }
+
+
+        if (!signedData?.signedUrl) {
+          continue;
+        }
+
+
+        voicesFound = true;
+
 
         const block =
           document.createElement("div");
@@ -132,25 +162,33 @@ async function loadArchive() {
         block.className =
           "answer-card";
 
-        block.innerHTML = `
-          <audio controls preload="none">
-            <source
-              src="${signedUrl}"
-            >
-            Your browser doesn't support audio playback.
-          </audio>
-        `;
+
+        const audio =
+          document.createElement("audio");
+
+        audio.controls = true;
+        audio.preload = "metadata";
+        audio.src = signedData.signedUrl;
+
+
+        block.appendChild(audio);
 
         voiceContainer.appendChild(block);
       }
 
-      if (voiceContainer.children.length > 0) {
-        archiveArea.appendChild(section);
+
+      if (
+        voiceContainer.children.length > 0
+      ) {
+
+        archiveArea.appendChild(
+          promptSection
+        );
       }
     }
 
 
-    if (!archiveArea.innerHTML.trim()) {
+    if (!voicesFound) {
 
       archiveArea.innerHTML = `
         <p class="message">
@@ -170,64 +208,6 @@ async function loadArchive() {
         Something went wrong loading the archive.
       </p>
     `;
-  }
-}
-
-
-async function createSignedAudioUrl(audioPath) {
-
-  try {
-
-    const response = await fetch(
-      `${SUPABASE_URL}/storage/v1/object/sign/voice-responses/${encodeURI(audioPath)}`,
-      {
-        method: "POST",
-
-        headers: {
-          "apikey": SUPABASE_KEY,
-          "Authorization": `Bearer ${SUPABASE_KEY}`,
-          "Content-Type": "application/json"
-        },
-
-        body: JSON.stringify({
-          expiresIn: 3600
-        })
-      }
-    );
-
-    if (!response.ok) {
-
-      console.error(
-        "Could not create signed URL:",
-        await response.text()
-      );
-
-      return null;
-    }
-
-    const data =
-      await response.json();
-
-    const signedPath =
-      data.signedURL || data.signedUrl;
-
-    if (!signedPath) {
-      return null;
-    }
-
-    if (signedPath.startsWith("http")) {
-      return signedPath;
-    }
-
-    return `${SUPABASE_URL}/storage/v1${signedPath}`;
-
-  }
-
-  catch (error) {
-
-    console.error(error);
-
-    return null;
   }
 }
 
