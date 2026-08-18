@@ -22,22 +22,18 @@ async function loadArchive() {
       }
     );
 
-
     if (!promptResponse.ok) {
       throw new Error("Could not load prompts");
     }
 
-
     const prompts =
       await promptResponse.json();
-
 
     const archivedPrompts =
       prompts.filter(prompt =>
         prompt.status === "archived" ||
         prompt.status === "active"
       );
-
 
     if (archivedPrompts.length === 0) {
 
@@ -49,7 +45,6 @@ async function loadArchive() {
 
       return;
     }
-
 
     archiveArea.innerHTML = "";
 
@@ -66,24 +61,19 @@ async function loadArchive() {
         }
       );
 
-
       if (!answersResponse.ok) {
         continue;
       }
 
-
       const answers =
         await answersResponse.json();
-
 
       const answerIds =
         answers.map(answer => answer.id);
 
-
       if (answerIds.length === 0) {
         continue;
       }
-
 
       const voiceResponse = await fetch(
         `${SUPABASE_URL}/rest/v1/voice_responses?answer_id=in.(${answerIds.join(",")})&status=eq.approved&select=id,audio_path&order=created_at.asc`,
@@ -95,24 +85,19 @@ async function loadArchive() {
         }
       );
 
-
       if (!voiceResponse.ok) {
         continue;
       }
 
-
       const voices =
         await voiceResponse.json();
-
 
       if (voices.length === 0) {
         continue;
       }
 
-
       const section =
         document.createElement("section");
-
 
       section.innerHTML = `
         <div class="emotion">
@@ -126,12 +111,20 @@ async function loadArchive() {
         <div class="archive-voices"></div>
       `;
 
-
       const voiceContainer =
         section.querySelector(".archive-voices");
 
 
-      voices.forEach((voice, index) => {
+      for (const voice of voices) {
+
+        const signedUrl =
+          await createSignedAudioUrl(
+            voice.audio_path
+          );
+
+        if (!signedUrl) {
+          continue;
+        }
 
         const block =
           document.createElement("div");
@@ -139,33 +132,21 @@ async function loadArchive() {
         block.className =
           "answer-card";
 
-
-        const audioUrl =
-          `${SUPABASE_URL}/storage/v1/object/voice-responses/${encodeURI(voice.audio_path)}`;
-
-
         block.innerHTML = `
-          <div class="answer-label">
-            Voice ${index + 1}
-          </div>
-
           <audio controls preload="none">
             <source
-              src="${audioUrl}"
-              type="audio/webm"
+              src="${signedUrl}"
             >
             Your browser doesn't support audio playback.
           </audio>
         `;
 
-
         voiceContainer.appendChild(block);
+      }
 
-      });
-
-
-      archiveArea.appendChild(section);
-
+      if (voiceContainer.children.length > 0) {
+        archiveArea.appendChild(section);
+      }
     }
 
 
@@ -189,6 +170,64 @@ async function loadArchive() {
         Something went wrong loading the archive.
       </p>
     `;
+  }
+}
+
+
+async function createSignedAudioUrl(audioPath) {
+
+  try {
+
+    const response = await fetch(
+      `${SUPABASE_URL}/storage/v1/object/sign/voice-responses/${encodeURI(audioPath)}`,
+      {
+        method: "POST",
+
+        headers: {
+          "apikey": SUPABASE_KEY,
+          "Authorization": `Bearer ${SUPABASE_KEY}`,
+          "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+          expiresIn: 3600
+        })
+      }
+    );
+
+    if (!response.ok) {
+
+      console.error(
+        "Could not create signed URL:",
+        await response.text()
+      );
+
+      return null;
+    }
+
+    const data =
+      await response.json();
+
+    const signedPath =
+      data.signedURL || data.signedUrl;
+
+    if (!signedPath) {
+      return null;
+    }
+
+    if (signedPath.startsWith("http")) {
+      return signedPath;
+    }
+
+    return `${SUPABASE_URL}/storage/v1${signedPath}`;
+
+  }
+
+  catch (error) {
+
+    console.error(error);
+
+    return null;
   }
 }
 
