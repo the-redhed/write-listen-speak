@@ -1,0 +1,179 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Georgia, "Times New Roman", serif;
+  background: #f5f1eb;
+  color: #24211f;
+}
+
+main {
+  width: min(680px, 90%);
+  margin: 0 auto;
+  padding: 70px 20px;
+  text-align: center;
+}
+
+.small-title,
+.emotion {
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+.small-title {
+  margin-bottom: 35px;
+}
+
+h1 {
+  font-size: clamp(42px, 8vw, 72px);
+  font-weight: normal;
+  line-height: 1;
+  margin: 0 0 30px;
+}
+
+h2 {
+  font-size: 40px;
+  font-weight: normal;
+  margin: 0 0 25px;
+}
+
+.intro {
+  font-size: 20px;
+  line-height: 1.6;
+  max-width: 520px;
+  margin: 0 auto 50px;
+}
+
+.emotion {
+  margin-bottom: 18px;
+}
+
+.prompt {
+  font-size: 28px;
+  line-height: 1.35;
+  margin: 0 auto 36px;
+  max-width: 600px;
+}
+
+textarea {
+  width: 100%;
+  min-height: 220px;
+  resize: vertical;
+  border: 1px solid rgba(36, 33, 31, 0.25);
+  border-radius: 18px;
+  background: rgba(255,255,255,0.4);
+  padding: 20px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 20px;
+  line-height: 1.5;
+  color: #24211f;
+  outline: none;
+  margin-bottom: 20px;
+}
+
+textarea:focus {
+  border-color: #24211f;
+}
+
+.answer-card,
+.instructions {
+  background: rgba(255,255,255,0.45);
+  border-radius: 20px;
+  max-width: 600px;
+  margin: 30px auto;
+}
+
+.answer-card {
+  padding: 35px;
+  text-align: left;
+}
+
+.instructions {
+  padding: 28px;
+  text-align: left;
+  font-size: 19px;
+  line-height: 1.6;
+}
+
+.answer-label {
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  opacity: 0.5;
+  margin-bottom: 18px;
+}
+
+.stranger-answer {
+  font-size: 24px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+button {
+  border: none;
+  padding: 16px 30px;
+  font-size: 16px;
+  cursor: pointer;
+  background: #24211f;
+  color: white;
+  border-radius: 30px;
+  margin: 5px;
+}
+
+button:hover {
+  opacity: 0.8;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.secondary {
+  background: transparent;
+  color: #24211f;
+  border: 1px solid rgba(36, 33, 31, 0.3);
+}
+
+.recording {
+  background: #8b2525;
+}
+
+.note,
+.message,
+.timer {
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  opacity: 0.65;
+}
+
+.note {
+  margin: 0 0 24px;
+}
+
+.message {
+  margin-top: 24px;
+}
+
+.timer {
+  font-size: 18px;
+  margin: 20px 0;
+}
+
+audio {
+  width: 100%;
+  max-width: 500px;
+  margin: 20px auto;
+}
+
+.hidden {
+  display: none;
+}
