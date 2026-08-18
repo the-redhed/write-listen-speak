@@ -381,40 +381,89 @@ async function loadPendingVoices() {
 
 
     const download =
-      document.createElement("a");
+  document.createElement("button");
 
-    download.href =
-      signedData.signedUrl;
+download.textContent =
+  "Download";
 
-    download.download =
-      voice.audio_path
-        .split("/")
-        .pop();
+download.className =
+  "secondary";
 
-    download.textContent =
-      "Download";
+download.addEventListener(
+  "click",
+  async () => {
 
-    download.style.display =
-      "inline-block";
+    download.disabled = true;
+    download.textContent = "Downloading...";
 
-    download.style.margin =
-      "5px";
+    try {
 
-    download.style.padding =
-      "16px 30px";
+      const {
+        data: fileBlob,
+        error: downloadError
+      } =
+        await supabaseClient
+          .storage
+          .from("voice-responses")
+          .download(
+            voice.audio_path
+          );
 
-    download.style.borderRadius =
-      "30px";
 
-    download.style.border =
-      "1px solid rgba(36, 33, 31, 0.3)";
+      if (downloadError) {
+        throw downloadError;
+      }
 
-    download.style.textDecoration =
-      "none";
 
-    download.style.color =
-      "#24211f";
+      const blobUrl =
+        URL.createObjectURL(fileBlob);
 
+
+      const temporaryLink =
+        document.createElement("a");
+
+      temporaryLink.href =
+        blobUrl;
+
+      temporaryLink.download =
+        voice.audio_path
+          .split("/")
+          .pop();
+
+
+      document.body.appendChild(
+        temporaryLink
+      );
+
+      temporaryLink.click();
+
+      temporaryLink.remove();
+
+
+      setTimeout(() => {
+        URL.revokeObjectURL(blobUrl);
+      }, 1000);
+
+    }
+
+    catch (error) {
+
+      console.error(error);
+
+      alert(
+        "Could not download the recording."
+      );
+
+    }
+
+    finally {
+
+      download.disabled = false;
+      download.textContent = "Download";
+
+    }
+  }
+);
 
     controls.appendChild(approve);
     controls.appendChild(reject);
