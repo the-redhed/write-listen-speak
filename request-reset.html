@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Request Password Reset</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <main>
+
+    <div class="small-title">
+      Write · Listen · Speak
+    </div>
+
+    <section>
+
+      <h1>Reset admin password</h1>
+
+      <input
+        id="reset-email"
+        type="email"
+        placeholder="Your admin email"
+        style="width:100%;max-width:500px;padding:16px;margin-bottom:20px;"
+      >
+
+      <br>
+
+      <button id="reset-button">
+        Send reset email
+      </button>
+
+      <p class="message" id="reset-message"></p>
+
+    </section>
+
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script>
+    const SUPABASE_URL =
+      "https://hgqujhmyamqfunkyokww.supabase.co";
+
+    const SUPABASE_KEY =
+      "sb_publishable_3QNt1LfRmiSrVaBUyxqfhw_ksSgSi-8";
+
+    const supabaseClient =
+      window.supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+      );
+
+    document
+      .getElementById("reset-button")
+      .addEventListener("click", async () => {
+
+        const email =
+          document
+            .getElementById("reset-email")
+            .value
+            .trim();
+
+        const message =
+          document.getElementById("reset-message");
+
+        if (!email) {
+          message.textContent =
+            "Enter your admin email.";
+          return;
+        }
+
+        const redirectTo =
+          window.location.origin + "/reset-password.html";
+
+        const { error } =
+          await supabaseClient.auth.resetPasswordForEmail(
+            email,
+            {
+              redirectTo: redirectTo
+            }
+          );
+
+        if (error) {
+          console.error(error);
+          message.textContent =
+            "Something went wrong sending the reset email.";
+          return;
+        }
+
+        message.textContent =
+          "Reset email sent. Check your inbox.";
+      });
+  </script>
+
+</body>
+</html>
