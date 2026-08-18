@@ -319,18 +319,28 @@ async function startRecording() {
 
     let options = {};
 
-    if (
-      MediaRecorder.isTypeSupported(
-        "audio/webm;codecs=opus"
-      )
-    ) {
-      options.mimeType =
-        "audio/webm;codecs=opus";
-    }
+if (
+  MediaRecorder.isTypeSupported(
+    "audio/mp4"
+  )
+) {
+  options.mimeType =
+    "audio/mp4";
+}
+else if (
+  MediaRecorder.isTypeSupported(
+    "audio/webm;codecs=opus"
+  )
+) {
+  options.mimeType =
+    "audio/webm;codecs=opus";
+}
 
-
-    mediaRecorder =
-      new MediaRecorder(mediaStream, options);
+mediaRecorder =
+  new MediaRecorder(
+    mediaStream,
+    options
+  );
 
 
     audioChunks = [];
@@ -559,12 +569,23 @@ async function sendRecording() {
 
   try {
 
-    const extension =
-      audioBlob.type.includes("mp4")
-        ? "mp4"
-        : audioBlob.type.includes("ogg")
-        ? "ogg"
-        : "webm";
+   let extension = "webm";
+
+if (
+  audioBlob.type.includes("mp4")
+) {
+  extension = "mp4";
+}
+else if (
+  audioBlob.type.includes("ogg")
+) {
+  extension = "ogg";
+}
+else if (
+  audioBlob.type.includes("wav")
+) {
+  extension = "wav";
+}
 
 
     const filename =
