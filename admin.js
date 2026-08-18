@@ -303,13 +303,47 @@ async function loadPendingVoices() {
 
 
   for (const voice of voices) {
+    const {
+      data: linkedAnswer,
+      error: answerError
+    } =
+      await supabaseClient
+        .from("answers")
+        .select("body")
+        .eq("id", voice.answer_id)
+        .single();
 
+
+    if (answerError) {
+      console.error(
+        "Could not load linked answer:",
+        answerError
+      );
+    }
     const card =
       document.createElement("div");
 
     card.className =
       "answer-card";
+    const answerLabel =
+      document.createElement("div");
 
+    answerLabel.className =
+      "answer-label";
+
+    answerLabel.textContent =
+      "Responding to";
+
+
+    const answerText =
+      document.createElement("p");
+
+    answerText.className =
+      "stranger-answer";
+
+    answerText.textContent =
+      linkedAnswer?.body ||
+      "Written answer unavailable";
 
     const {
       data: signedData,
@@ -469,8 +503,10 @@ download.addEventListener(
     controls.appendChild(reject);
     controls.appendChild(download);
 
-    card.appendChild(audio);
-    card.appendChild(controls);
+    card.appendChild(answerLabel);
+card.appendChild(answerText);
+card.appendChild(audio);
+card.appendChild(controls);
 
     area.appendChild(card);
   }
