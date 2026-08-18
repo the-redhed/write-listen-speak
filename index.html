@@ -46,6 +46,12 @@
       margin: 0 0 30px;
     }
 
+    h2 {
+      font-size: 40px;
+      font-weight: normal;
+      margin: 0 0 25px;
+    }
+
     .intro {
       font-size: 20px;
       line-height: 1.6;
@@ -84,6 +90,30 @@
       border-color: #24211f;
     }
 
+    .answer-card {
+      margin: 35px auto;
+      padding: 35px;
+      max-width: 600px;
+      background: rgba(255,255,255,0.45);
+      border-radius: 20px;
+      text-align: left;
+    }
+
+    .answer-label {
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      opacity: 0.5;
+      margin-bottom: 18px;
+    }
+
+    .stranger-answer {
+      font-size: 24px;
+      line-height: 1.55;
+      margin: 0;
+    }
+
     button {
       border: none;
       padding: 16px 30px;
@@ -114,7 +144,7 @@
     .message {
       font-family: Arial, sans-serif;
       font-size: 14px;
-      line-height: 1.5;
+      line-height: 1.6;
       opacity: 0.65;
     }
 
@@ -140,6 +170,9 @@
       Write · Listen · Speak
     </div>
 
+
+    <!-- HOME -->
+
     <section id="home-screen">
 
       <h1>
@@ -158,6 +191,9 @@
 
     </section>
 
+
+    <!-- WRITE -->
+
     <section id="write-screen" class="hidden">
 
       <div class="emotion" id="write-emotion"></div>
@@ -171,7 +207,8 @@
       ></textarea>
 
       <p class="note">
-        Please don't include your name, contact details, or identifying information.
+        Please don't include your name, contact details,
+        or identifying information.
       </p>
 
       <button class="secondary" id="back-button">
@@ -186,18 +223,68 @@
 
     </section>
 
+
+    <!-- LISTEN -->
+
+    <section id="listen-screen" class="hidden">
+
+      <div class="emotion" id="listen-emotion"></div>
+
+      <h2>Now, listen.</h2>
+
+      <p class="intro">
+        Someone else answered the same question.
+        Take a moment with their words.
+      </p>
+
+      <p class="prompt" id="listen-question"></p>
+
+      <div class="answer-card">
+
+        <div class="answer-label">
+          Someone wrote
+        </div>
+
+        <p class="stranger-answer" id="stranger-answer"></p>
+
+      </div>
+
+      <p class="note">
+        You don't need to fix anything.
+        Just hear what they chose to share.
+      </p>
+
+      <button id="voice-button">
+        Leave them a voice
+      </button>
+
+      <p class="message" id="listen-message"></p>
+
+    </section>
+
   </main>
 
+
   <script>
-    const SUPABASE_URL = "https://hgqujhmyamqfunkyokww.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_3QNt1LfRmiSrVaBUyxqfhw_ksSgSi-8";
+
+    const SUPABASE_URL =
+      "https://hgqujhmyamqfunkyokww.supabase.co";
+
+    const SUPABASE_KEY =
+      "sb_publishable_3QNt1LfRmiSrVaBUyxqfhw_ksSgSi-8";
+
 
     let activePrompt = null;
+    let selectedAnswer = null;
+
 
     async function loadPrompt() {
-      const promptArea = document.getElementById("prompt-area");
+
+      const promptArea =
+        document.getElementById("prompt-area");
 
       try {
+
         const response = await fetch(
           `${SUPABASE_URL}/rest/v1/prompts?status=eq.active&select=id,emotion,question&limit=1`,
           {
@@ -215,11 +302,13 @@
         const prompts = await response.json();
 
         if (prompts.length === 0) {
+
           promptArea.innerHTML = `
             <p class="message">
               There isn't an active question right now.
             </p>
           `;
+
           return;
         }
 
@@ -243,7 +332,10 @@
           .getElementById("begin-button")
           .addEventListener("click", showWriteScreen);
 
-      } catch (error) {
+      }
+
+      catch (error) {
+
         console.error(error);
 
         promptArea.innerHTML = `
@@ -254,9 +346,16 @@
       }
     }
 
+
     function showWriteScreen() {
-      document.getElementById("home-screen").classList.add("hidden");
-      document.getElementById("write-screen").classList.remove("hidden");
+
+      document
+        .getElementById("home-screen")
+        .classList.add("hidden");
+
+      document
+        .getElementById("write-screen")
+        .classList.remove("hidden");
 
       document.getElementById("write-emotion").textContent =
         activePrompt.emotion;
@@ -265,37 +364,62 @@
         activePrompt.question;
     }
 
+
     function showHomeScreen() {
-      document.getElementById("write-screen").classList.add("hidden");
-      document.getElementById("home-screen").classList.remove("hidden");
+
+      document
+        .getElementById("write-screen")
+        .classList.add("hidden");
+
+      document
+        .getElementById("home-screen")
+        .classList.remove("hidden");
     }
 
+
     async function submitAnswer() {
-      const box = document.getElementById("answer-box");
-      const button = document.getElementById("submit-button");
-      const message = document.getElementById("submit-message");
+
+      const box =
+        document.getElementById("answer-box");
+
+      const button =
+        document.getElementById("submit-button");
+
+      const message =
+        document.getElementById("submit-message");
 
       const body = box.value.trim();
 
+
       if (!body) {
-        message.textContent = "Write something before submitting.";
+
+        message.textContent =
+          "Write something before submitting.";
+
         return;
       }
 
+
       button.disabled = true;
-      message.textContent = "Sending...";
+
+      message.textContent =
+        "Sending...";
+
 
       try {
+
         const response = await fetch(
           `${SUPABASE_URL}/rest/v1/answers`,
           {
             method: "POST",
+
             headers: {
               "apikey": SUPABASE_KEY,
               "Authorization": `Bearer ${SUPABASE_KEY}`,
               "Content-Type": "application/json",
               "Prefer": "return=minimal"
             },
+
             body: JSON.stringify({
               prompt_id: activePrompt.id,
               body: body,
@@ -304,38 +428,150 @@
           }
         );
 
+
         if (!response.ok) {
           throw new Error("Could not submit answer");
         }
 
-        box.value = "";
-        message.textContent =
-          "Thank you. Your answer has been received.";
 
-      } catch (error) {
-        console.error(error);
+        box.value = "";
+
         message.textContent =
-          "Something went wrong. Please try again.";
+          "Thank you. Finding someone for you to hear...";
+
+
+        await loadStrangerAnswer();
+
       }
 
-      button.disabled = false;
+      catch (error) {
+
+        console.error(error);
+
+        message.textContent =
+          "Something went wrong. Please try again.";
+
+        button.disabled = false;
+      }
     }
 
+
+    async function loadStrangerAnswer() {
+
+      try {
+
+        const response = await fetch(
+          `${SUPABASE_URL}/rest/v1/answers?prompt_id=eq.${activePrompt.id}&status=eq.approved&select=id,body`,
+          {
+            headers: {
+              "apikey": SUPABASE_KEY,
+              "Authorization": `Bearer ${SUPABASE_KEY}`
+            }
+          }
+        );
+
+
+        if (!response.ok) {
+          throw new Error("Could not load an answer");
+        }
+
+
+        const answers = await response.json();
+
+
+        if (answers.length === 0) {
+
+          document.getElementById("submit-message").textContent =
+            "Your answer was received. There isn't another answer ready to hear yet.";
+
+          document.getElementById("submit-button").disabled = false;
+
+          return;
+        }
+
+
+        const randomIndex =
+          Math.floor(Math.random() * answers.length);
+
+        selectedAnswer =
+          answers[randomIndex];
+
+
+        showListenScreen();
+
+      }
+
+      catch (error) {
+
+        console.error(error);
+
+        document.getElementById("submit-message").textContent =
+          "Your answer was received, but we couldn't find another answer right now.";
+
+        document.getElementById("submit-button").disabled = false;
+      }
+    }
+
+
+    function showListenScreen() {
+
+      document
+        .getElementById("write-screen")
+        .classList.add("hidden");
+
+      document
+        .getElementById("listen-screen")
+        .classList.remove("hidden");
+
+
+      document.getElementById("listen-emotion").textContent =
+        activePrompt.emotion;
+
+
+      document.getElementById("listen-question").textContent =
+        activePrompt.question;
+
+
+      document.getElementById("stranger-answer").textContent =
+        selectedAnswer.body;
+    }
+
+
+    function voiceComingNext() {
+
+      document.getElementById("listen-message").textContent =
+        "Voice recording is coming next.";
+    }
+
+
     function escapeHtml(text) {
-      const div = document.createElement("div");
+
+      const div =
+        document.createElement("div");
+
       div.textContent = text;
+
       return div.innerHTML;
     }
+
 
     document
       .getElementById("back-button")
       .addEventListener("click", showHomeScreen);
 
+
     document
       .getElementById("submit-button")
       .addEventListener("click", submitAnswer);
 
+
+    document
+      .getElementById("voice-button")
+      .addEventListener("click", voiceComingNext);
+
+
     loadPrompt();
+
   </script>
 
 </body>
