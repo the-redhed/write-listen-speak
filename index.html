@@ -17,24 +17,26 @@
       font-family: Georgia, "Times New Roman", serif;
       background: #f5f1eb;
       color: #24211f;
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }
 
     main {
       width: min(680px, 90%);
+      margin: 0 auto;
+      padding: 70px 20px;
       text-align: center;
-      padding: 60px 20px;
     }
 
-    .small-title {
+    .small-title,
+    .emotion {
       font-family: Arial, sans-serif;
       font-size: 13px;
       letter-spacing: 3px;
       text-transform: uppercase;
-      margin-bottom: 35px;
       opacity: 0.6;
+    }
+
+    .small-title {
+      margin-bottom: 35px;
     }
 
     h1 {
@@ -47,24 +49,39 @@
     .intro {
       font-size: 20px;
       line-height: 1.6;
-      margin: 0 auto 50px;
       max-width: 520px;
+      margin: 0 auto 50px;
     }
 
     .emotion {
-      font-family: Arial, sans-serif;
-      font-size: 13px;
-      letter-spacing: 3px;
-      text-transform: uppercase;
       margin-bottom: 18px;
-      opacity: 0.6;
     }
 
     .prompt {
       font-size: 28px;
       line-height: 1.35;
-      margin: 0 auto 40px;
+      margin: 0 auto 36px;
       max-width: 600px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 220px;
+      resize: vertical;
+      border: 1px solid rgba(36, 33, 31, 0.25);
+      border-radius: 18px;
+      background: rgba(255,255,255,0.4);
+      padding: 20px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 20px;
+      line-height: 1.5;
+      color: #24211f;
+      outline: none;
+      margin-bottom: 20px;
+    }
+
+    textarea:focus {
+      border-color: #24211f;
     }
 
     button {
@@ -81,10 +98,36 @@
       opacity: 0.8;
     }
 
-    .error {
+    button:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+
+    .secondary {
+      background: transparent;
+      color: #24211f;
+      border: 1px solid rgba(36, 33, 31, 0.3);
+      margin-right: 10px;
+    }
+
+    .note,
+    .message {
       font-family: Arial, sans-serif;
       font-size: 14px;
-      opacity: 0.6;
+      line-height: 1.5;
+      opacity: 0.65;
+    }
+
+    .note {
+      margin: 0 0 24px;
+    }
+
+    .message {
+      margin-top: 24px;
+    }
+
+    .hidden {
+      display: none;
     }
   </style>
 </head>
@@ -97,33 +140,66 @@
       Write · Listen · Speak
     </div>
 
-    <h1>
-      Be heard.<br>
-      Hear someone.
-    </h1>
+    <section id="home-screen">
 
-    <p class="intro">
-      Every week, one question about something human.
-      Share your answer anonymously, then hear another person's.
-    </p>
+      <h1>
+        Be heard.<br>
+        Hear someone.
+      </h1>
 
-    <div id="prompt-area">
-      <p>Loading this week's question...</p>
-    </div>
+      <p class="intro">
+        Every week, one question about something human.
+        Share your answer anonymously, then hear another person's.
+      </p>
+
+      <div id="prompt-area">
+        <p>Loading this week's question...</p>
+      </div>
+
+    </section>
+
+    <section id="write-screen" class="hidden">
+
+      <div class="emotion" id="write-emotion"></div>
+
+      <p class="prompt" id="write-question"></p>
+
+      <textarea
+        id="answer-box"
+        maxlength="2000"
+        placeholder="Write whatever comes up..."
+      ></textarea>
+
+      <p class="note">
+        Please don't include your name, contact details, or identifying information.
+      </p>
+
+      <button class="secondary" id="back-button">
+        Back
+      </button>
+
+      <button id="submit-button">
+        Submit anonymously
+      </button>
+
+      <p class="message" id="submit-message"></p>
+
+    </section>
 
   </main>
 
   <script>
     const SUPABASE_URL = "https://hgqujhmyamqfunkyokww.supabase.co";
-
     const SUPABASE_KEY = "sb_publishable_3QNt1LfRmiSrVaBUyxqfhw_ksSgSi-8";
+
+    let activePrompt = null;
 
     async function loadPrompt() {
       const promptArea = document.getElementById("prompt-area");
 
       try {
         const response = await fetch(
-          `${SUPABASE_URL}/rest/v1/prompts?status=eq.active&select=emotion,question&limit=1`,
+          `${SUPABASE_URL}/rest/v1/prompts?status=eq.active&select=id,emotion,question&limit=1`,
           {
             headers: {
               "apikey": SUPABASE_KEY,
@@ -140,38 +216,109 @@
 
         if (prompts.length === 0) {
           promptArea.innerHTML = `
-            <p class="error">
+            <p class="message">
               There isn't an active question right now.
             </p>
           `;
           return;
         }
 
-        const prompt = prompts[0];
+        activePrompt = prompts[0];
 
         promptArea.innerHTML = `
           <div class="emotion">
-            ${escapeHtml(prompt.emotion)}
+            ${escapeHtml(activePrompt.emotion)}
           </div>
 
           <p class="prompt">
-            ${escapeHtml(prompt.question)}
+            ${escapeHtml(activePrompt.question)}
           </p>
 
-          <button>
+          <button id="begin-button">
             Begin
           </button>
         `;
+
+        document
+          .getElementById("begin-button")
+          .addEventListener("click", showWriteScreen);
 
       } catch (error) {
         console.error(error);
 
         promptArea.innerHTML = `
-          <p class="error">
+          <p class="message">
             Something went wrong loading the question.
           </p>
         `;
       }
+    }
+
+    function showWriteScreen() {
+      document.getElementById("home-screen").classList.add("hidden");
+      document.getElementById("write-screen").classList.remove("hidden");
+
+      document.getElementById("write-emotion").textContent =
+        activePrompt.emotion;
+
+      document.getElementById("write-question").textContent =
+        activePrompt.question;
+    }
+
+    function showHomeScreen() {
+      document.getElementById("write-screen").classList.add("hidden");
+      document.getElementById("home-screen").classList.remove("hidden");
+    }
+
+    async function submitAnswer() {
+      const box = document.getElementById("answer-box");
+      const button = document.getElementById("submit-button");
+      const message = document.getElementById("submit-message");
+
+      const body = box.value.trim();
+
+      if (!body) {
+        message.textContent = "Write something before submitting.";
+        return;
+      }
+
+      button.disabled = true;
+      message.textContent = "Sending...";
+
+      try {
+        const response = await fetch(
+          `${SUPABASE_URL}/rest/v1/answers`,
+          {
+            method: "POST",
+            headers: {
+              "apikey": SUPABASE_KEY,
+              "Authorization": `Bearer ${SUPABASE_KEY}`,
+              "Content-Type": "application/json",
+              "Prefer": "return=minimal"
+            },
+            body: JSON.stringify({
+              prompt_id: activePrompt.id,
+              body: body,
+              status: "pending"
+            })
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Could not submit answer");
+        }
+
+        box.value = "";
+        message.textContent =
+          "Thank you. Your answer has been received.";
+
+      } catch (error) {
+        console.error(error);
+        message.textContent =
+          "Something went wrong. Please try again.";
+      }
+
+      button.disabled = false;
     }
 
     function escapeHtml(text) {
@@ -179,6 +326,14 @@
       div.textContent = text;
       return div.innerHTML;
     }
+
+    document
+      .getElementById("back-button")
+      .addEventListener("click", showHomeScreen);
+
+    document
+      .getElementById("submit-button")
+      .addEventListener("click", submitAnswer);
 
     loadPrompt();
   </script>
