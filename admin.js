@@ -346,24 +346,30 @@ async function loadPendingVoices() {
       "Written answer unavailable";
 
     const {
-      data: signedData,
-      error: signedError
-    } =
-      await supabaseClient
-        .storage
-        .from("voice-responses")
-        .createSignedUrl(
-          voice.audio_path,
-          3600
-        );
+  data: audioBlob,
+  error: audioError
+} =
+  await supabaseClient
+    .storage
+    .from("voice-responses")
+    .download(
+      voice.audio_path
+    );
 
 
-    if (signedError) {
+if (audioError) {
 
-      console.error(signedError);
+  console.error(
+    "Could not load recording:",
+    audioError
+  );
 
-      continue;
-    }
+  continue;
+}
+
+
+const playbackUrl =
+  URL.createObjectURL(audioBlob);
 
 
     const audio =
@@ -371,8 +377,8 @@ async function loadPendingVoices() {
 
     audio.controls = true;
     audio.preload = "metadata";
-    audio.src =
-      signedData.signedUrl;
+   audio.src =
+  playbackUrl;
 
 
     const controls =
