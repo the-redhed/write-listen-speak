@@ -177,3 +177,24 @@ audio {
 .hidden {
   display: none;
 }
+
+.site-nav {
+  display: flex;
+  justify-content: center;
+  gap: 28px;
+  margin-bottom: 50px;
+}
+
+.site-nav a {
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #24211f;
+  text-decoration: none;
+  opacity: 0.55;
+}
+
+.site-nav a:hover {
+  opacity: 1;
+}
